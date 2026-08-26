@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-26
+
+### Added
+
+- Pi support: uses Pi's `ModelRegistry.refresh({ force: true })` when
+  `reapplyModelPolicies` is unavailable, and honors `PI_ENV_RELOAD_CONFIG_DIR`
+  for the Pi `~/.pi/agent` config layout.
+- Notifications now name the actual dotenv path being reloaded.
+
+### Changed
+
+- README documents the Pi `PI_ENV_RELOAD_CONFIG_DIR` requirement and the
+  harness-specific dotenv locations.
+
 ## [0.1.0] - 2026-08-26
 
 ### Added
