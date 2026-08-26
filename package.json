@@ -1,21 +1,39 @@
 {
   "name": "pi-env-reload",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Reload .env credentials in a running Oh My Pi or Pi session",
-  "keywords": ["pi-package", "pi", "omp", "oh-my-pi", "extension", "env", "dotenv", "api-key"],
+  "keywords": [
+    "pi-package",
+    "pi",
+    "omp",
+    "oh-my-pi",
+    "extension",
+    "env",
+    "dotenv",
+    "api-key"
+  ],
   "license": "MIT",
   "author": "LoneExile",
   "type": "module",
   "homepage": "https://github.com/LoneExile/pi-env-reload#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/LoneExile/pi-env-reload.git" },
-  "bugs": { "url": "https://github.com/LoneExile/pi-env-reload/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LoneExile/pi-env-reload.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LoneExile/pi-env-reload/issues"
+  },
   "pi": {
-    "extensions": ["./extensions"]
+    "extensions": [
+      "./extensions"
+    ]
   },
   "omp": {
     "name": "pi-env-reload",
     "description": "Reload ~/.omp/.env credentials in a running session with /env-reload.",
-    "extensions": ["./extensions"]
+    "extensions": [
+      "./extensions"
+    ]
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -25,5 +43,10 @@
     "@types/node": "^22.10.0",
     "typescript": "^5.6.0"
   },
-  "files": ["extensions", "README.md", "CHANGELOG.md", "LICENSE"]
+  "files": [
+    "extensions",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ]
 }
