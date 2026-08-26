@@ -1,0 +1,52 @@
+# pi-env-reload
+
+[![npm version](https://img.shields.io/npm/v/pi-env-reload.svg)](https://www.npmjs.com/package/pi-env-reload)
+[![npm downloads](https://img.shields.io/npm/dm/pi-env-reload.svg)](https://www.npmjs.com/package/pi-env-reload)
+[![CI](https://github.com/LoneExile/pi-env-reload/actions/workflows/ci.yml/badge.svg)](https://github.com/LoneExile/pi-env-reload/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/pi-env-reload.svg)](./LICENSE)
+
+Reload API credentials from `~/.omp/.env` in a running [Oh My Pi](https://omp.dev) or [Pi](https://pi.dev) session.
+
+## Install
+
+### Oh My Pi
+
+```bash
+omp plugin install npm:pi-env-reload
+```
+
+### Pi
+
+```bash
+pi install npm:pi-env-reload
+```
+
+Start a new session after installing the package. Extensions are discovered when the session starts.
+
+## Use
+
+Edit `~/.omp/.env`, then run this command in the active session:
+
+```text
+/env-reload
+```
+
+The command waits for any active request to finish, reloads the file into the running process, and rebuilds the model registry. This supports credentials referenced by static `models.yml` entries, including custom providers whose `apiKey` points at a variable such as `REFRESHER_ANTHROPIC_KEY`.
+
+The command reports only a generic success or error message. It never prints credential values.
+
+## Scope and limitations
+
+- The extension reloads only `~/.omp/.env` or the active profile's `.env` file.
+- It updates the current process only. Child shells and future OMP processes use their own environment.
+- Values supplied by a `!command` entry in `models.yml` remain subject to OMP's command-result cache.
+- The reload is explicit. The package does not watch the file or reload credentials during an active request.
+
+## Develop
+
+```bash
+npm install
+npm run typecheck
+npm test
+npm pack --dry-run
+```

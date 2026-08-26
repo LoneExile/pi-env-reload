@@ -1,0 +1,15 @@
+# Node
+node_modules/
+dist/
+*.log
+*.tgz
+
+# Local design/spec docs — intentionally kept OUT of version control
+docs/superpowers/
+.worktrees/
+
+# Environment and secrets — never commit
+.env
+.env.*
+*.pem
+*.key

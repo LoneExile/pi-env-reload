@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2024"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true
+  },
+  // test/ is intentionally NOT included here: typechecking it would require
+  // the bun-types devDependency, which the zero-extra-deps constraint
+  // forbids. Tests are instead validated at runtime via `bun test`.
+  "include": ["extensions/**/*.ts"]
+}
