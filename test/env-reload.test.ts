@@ -25,6 +25,29 @@ function createPi() {
   };
 }
 
+type LiveEnv = Record<string, string | undefined>;
+
+function setupEnv(fixture: string, key: string, aliasKey: string | null): { liveEnv: LiveEnv; keys: string[]; fixtureHome: string } {
+  const fixtureHome = createEnvFixture(fixture);
+  const liveEnv = process.env as LiveEnv;
+  const keys = [key, ...(aliasKey ? [aliasKey] : []), "SECOND_KEY", "HOME"];
+  const previous = new Map<string, string | undefined>();
+  for (const name of keys) previous.set(name, liveEnv[name]);
+  liveEnv.HOME = fixtureHome;
+  liveEnv[key] = "old-value";
+  if (aliasKey) liveEnv[aliasKey] = "old-alias";
+  delete liveEnv.SECOND_KEY;
+  return { liveEnv, keys, fixtureHome };
+}
+
+function restoreEnv(liveEnv: LiveEnv, keys: string[], previous: Map<string, string | undefined>): void {
+  for (const key of keys) {
+    const value = previous.get(key);
+    if (value === undefined) delete liveEnv[key];
+    else liveEnv[key] = value;
+  }
+}
+
 describe("env-reload extension", () => {
   test("registers the env-reload command", async () => {
     const { api, commands } = createPi();
@@ -33,54 +56,85 @@ describe("env-reload extension", () => {
     expect(commands.has("env-reload")).toBe(true);
   });
 
-  test("waits, updates the running env, rebuilds models, and does not expose values", async () => {
+  test("uses OMP reapplyModelPolicies when present", async () => {
     const fixture = "OMP_TEST_RELOAD_KEY=new-value\nSECOND_KEY=another-value\n";
-    const fixtureHome = createEnvFixture(fixture);
-    const liveEnv = process.env as Record<string, string | undefined>;
+    const { liveEnv, keys } = setupEnv(fixture, "OMP_TEST_RELOAD_KEY", "PI_TEST_RELOAD_KEY");
     const previous = new Map<string, string | undefined>();
-    // Explicit fixture keys, NOT derived by parsing the file: the test must
-    // stay independent of the parser it exercises. Includes the PI_ mirror
-    // the extension derives from the OMP_ entry, plus HOME.
-    const keys = ["OMP_TEST_RELOAD_KEY", "PI_TEST_RELOAD_KEY", "SECOND_KEY", "HOME"];
     for (const key of keys) previous.set(key, liveEnv[key]);
-
-    liveEnv.HOME = fixtureHome;
-    liveEnv.OMP_TEST_RELOAD_KEY = "old-value";
-    liveEnv.PI_TEST_RELOAD_KEY = "old-omp-alias";
-    delete liveEnv.SECOND_KEY;
     const { api, commands } = createPi();
     const module = await import(extensionPath);
     module.default(api);
     const events: string[] = [];
     const notifications: Array<{ message: string; type?: string }> = [];
-
     try {
       await commands.get("env-reload")?.handler("", {
-        waitForIdle: async () => {
-          events.push("idle");
-          expect(liveEnv.OMP_TEST_RELOAD_KEY).toBe("old-value");
-        },
+        waitForIdle: async () => { events.push("idle"); },
         modelRegistry: {
           reapplyModelPolicies: async () => {
-            events.push("rebuild");
+            events.push("omp-rebuild");
             expect(liveEnv.OMP_TEST_RELOAD_KEY).toBe("new-value");
+            expect(liveEnv.PI_TEST_RELOAD_KEY).toBe("new-value");
+          },
+          refresh: async () => { events.push("pi-refresh"); },
+        },
+        ui: { notify(message: string, type?: string) { notifications.push({ message, type }); } },
+      });
+      expect(events).toEqual(["idle", "omp-rebuild"]);
+      expect(liveEnv.SECOND_KEY).toBe("another-value");
+      expect(notifications).toEqual([{ message: "Reloaded ~/.omp/.env", type: "info" }]);
+    } finally {
+      restoreEnv(liveEnv, keys, previous);
+    }
+  });
+
+  test("uses Pi refresh when reapplyModelPolicies is absent", async () => {
+    const fixture = "PI_TEST_RELOAD_KEY=new-value\nSECOND_KEY=another-value\n";
+    const { liveEnv, keys } = setupEnv(fixture, "PI_TEST_RELOAD_KEY", null);
+    const previous = new Map<string, string | undefined>();
+    for (const key of keys) previous.set(key, liveEnv[key]);
+    const { api, commands } = createPi();
+    const module = await import(extensionPath);
+    module.default(api);
+    const events: string[] = [];
+    const notifications: Array<{ message: string; type?: string }> = [];
+    try {
+      await commands.get("env-reload")?.handler("", {
+        waitForIdle: async () => { events.push("idle"); },
+        modelRegistry: {
+          refresh: async (options?: { force?: boolean }) => {
+            events.push(`pi-refresh-force=${options?.force === true}`);
             expect(liveEnv.PI_TEST_RELOAD_KEY).toBe("new-value");
           },
         },
         ui: { notify(message: string, type?: string) { notifications.push({ message, type }); } },
       });
-      expect(events).toEqual(["idle", "rebuild"]);
-      expect(liveEnv.OMP_TEST_RELOAD_KEY).toBe("new-value");
-      expect(liveEnv.PI_TEST_RELOAD_KEY).toBe("new-value");
+      expect(events).toEqual(["idle", "pi-refresh-force=true"]);
       expect(liveEnv.SECOND_KEY).toBe("another-value");
       expect(notifications).toEqual([{ message: "Reloaded ~/.omp/.env", type: "info" }]);
-      expect(notifications[0]?.message).not.toContain("new-value");
     } finally {
-      for (const key of keys) {
-        const value = previous.get(key);
-        if (value === undefined) delete liveEnv[key];
-        else liveEnv[key] = value;
-      }
+      restoreEnv(liveEnv, keys, previous);
+    }
+  });
+
+  test("fails without mutating env when no model-rebuild API exists", async () => {
+    const fixture = "ONLY_KEY=new-value\n";
+    const { liveEnv, keys } = setupEnv(fixture, "ONLY_KEY", null);
+    const previous = new Map<string, string | undefined>();
+    for (const key of keys) previous.set(key, liveEnv[key]);
+    const { api, commands } = createPi();
+    const module = await import(extensionPath);
+    module.default(api);
+    const notifications: Array<{ message: string; type?: string }> = [];
+    try {
+      await commands.get("env-reload")?.handler("", {
+        waitForIdle: async () => {},
+        modelRegistry: {},
+        ui: { notify(message: string, type?: string) { notifications.push({ message, type }); } },
+      });
+      expect(liveEnv.ONLY_KEY).toBe("old-value");
+      expect(notifications).toEqual([{ message: "Cannot reload ~/.omp/.env: model configuration was not rebuilt", type: "error" }]);
+    } finally {
+      restoreEnv(liveEnv, keys, previous);
     }
   });
 });

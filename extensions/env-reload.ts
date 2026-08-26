@@ -13,7 +13,8 @@ type ExtensionContext = {
 	cwd: string;
 	hasUI: boolean;
 	modelRegistry: {
-		reapplyModelPolicies(): Promise<void>;
+		reapplyModelPolicies?(): Promise<void>;
+		refresh?(options?: { force?: boolean; signal?: AbortSignal }): Promise<unknown>;
 	};
 	ui: {
 		notify(message: string, type?: "info" | "warning" | "error"): void;
@@ -127,7 +128,14 @@ export default function (pi: ExtensionAPI): void {
 			for (const [key, value] of Object.entries(values)) setLiveEnv(key, value);
 
 			try {
-				await ctx.modelRegistry.reapplyModelPolicies();
+				const registry = ctx.modelRegistry;
+				if (typeof registry.reapplyModelPolicies === "function") {
+					await registry.reapplyModelPolicies();
+				} else if (typeof registry.refresh === "function") {
+					await registry.refresh({ force: true });
+				} else {
+					throw new Error("no supported model-rebuild API");
+				}
 			} catch {
 				for (const [key, state] of previous) restoreLiveEnv(key, state);
 				ctx.ui.notify("Cannot reload ~/.omp/.env: model configuration was not rebuilt", "error");
