@@ -6,19 +6,6 @@ import { fileURLToPath } from "node:url";
 
 const extensionPath = fileURLToPath(new URL("../extensions/env-reload.ts", import.meta.url));
 
-// Keys the fixture declares, plus the PI_ mirrors the extension derives from
-// OMP_ entries. Every one of them must be snapshot/restored around the test.
-function touchedKeys(content: string): string[] {
-  const keys: string[] = [];
-  for (const line of content.split("\n")) {
-    const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=/);
-    if (!match) continue;
-    keys.push(match[1]!);
-    if (match[1]!.startsWith("OMP_")) keys.push(`PI_${match[1]!.slice(4)}`);
-  }
-  return keys;
-}
-
 function createEnvFixture(content: string): string {
   const home = mkdtempSync(join(tmpdir(), "pi-env-reload-test-"));
   mkdirSync(join(home, ".omp"), { recursive: true });
@@ -51,7 +38,10 @@ describe("env-reload extension", () => {
     const fixtureHome = createEnvFixture(fixture);
     const liveEnv = process.env as Record<string, string | undefined>;
     const previous = new Map<string, string | undefined>();
-    const keys = [...touchedKeys(fixture), "HOME"];
+    // Explicit fixture keys, NOT derived by parsing the file: the test must
+    // stay independent of the parser it exercises. Includes the PI_ mirror
+    // the extension derives from the OMP_ entry, plus HOME.
+    const keys = ["OMP_TEST_RELOAD_KEY", "PI_TEST_RELOAD_KEY", "SECOND_KEY", "HOME"];
     for (const key of keys) previous.set(key, liveEnv[key]);
 
     liveEnv.HOME = fixtureHome;
