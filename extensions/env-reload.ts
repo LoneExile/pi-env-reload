@@ -110,7 +110,7 @@ function restoreLiveEnv(key: string, state: EnvState): void {
 
 export default function (pi: ExtensionAPI): void {
 	pi.registerCommand("env-reload", {
-		description: "Reload ~/.omp/.env into the active session",
+		description: "Reload the dotenv file into the active session",
 		handler: async (_args, ctx) => {
 			await ctx.waitForIdle();
 
@@ -119,7 +119,7 @@ export default function (pi: ExtensionAPI): void {
 			try {
 				values = parseEnvFile(envPath);
 			} catch {
-				ctx.ui.notify("Cannot reload ~/.omp/.env: file is missing or unreadable", "error");
+				ctx.ui.notify(`Cannot reload ${envPath}: file is missing or unreadable`, "error");
 				return;
 			}
 
@@ -143,11 +143,11 @@ export default function (pi: ExtensionAPI): void {
 				}
 			} catch {
 				for (const [key, state] of previous) restoreLiveEnv(key, state);
-				ctx.ui.notify("Cannot reload ~/.omp/.env: model configuration was not rebuilt", "error");
+				ctx.ui.notify(`Cannot reload ${envPath}: model configuration was not rebuilt`, "error");
 				return;
 			}
 
-			ctx.ui.notify("Reloaded ~/.omp/.env", "info");
+			ctx.ui.notify(`Reloaded ${envPath}`, "info");
 		},
 	});
 }

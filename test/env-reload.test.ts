@@ -81,7 +81,7 @@ describe("env-reload extension", () => {
       });
       expect(events).toEqual(["idle", "omp-rebuild"]);
       expect(liveEnv.SECOND_KEY).toBe("another-value");
-      expect(notifications).toEqual([{ message: "Reloaded ~/.omp/.env", type: "info" }]);
+      expect(notifications).toEqual([{ message: `Reloaded ${join(liveEnv.HOME, ".omp", ".env")}`, type: "info" }]);
     } finally {
       restoreEnv(liveEnv, keys, previous);
     }
@@ -110,7 +110,7 @@ describe("env-reload extension", () => {
       });
       expect(events).toEqual(["idle", "pi-refresh-force=true"]);
       expect(liveEnv.SECOND_KEY).toBe("another-value");
-      expect(notifications).toEqual([{ message: "Reloaded ~/.omp/.env", type: "info" }]);
+      expect(notifications).toEqual([{ message: `Reloaded ${join(liveEnv.HOME, ".omp", ".env")}`, type: "info" }]);
     } finally {
       restoreEnv(liveEnv, keys, previous);
     }
@@ -143,7 +143,7 @@ describe("env-reload extension", () => {
       });
       expect(liveEnv.PI_TEST_RELOAD_KEY).toBe("new-value");
       expect(liveEnv.SECOND_KEY).toBe("another-value");
-      expect(notifications).toEqual([{ message: "Reloaded ~/.omp/.env", type: "info" }]);
+      expect(notifications).toEqual([{ message: `Reloaded ${piAgent}/.env`, type: "info" }]);
     } finally {
       restoreEnv(liveEnv, keys, previous);
     }
@@ -151,7 +151,7 @@ describe("env-reload extension", () => {
 
   test("fails without mutating env when no model-rebuild API exists", async () => {
     const fixture = "ONLY_KEY=new-value\n";
-    const { liveEnv, keys } = setupEnv(fixture, "ONLY_KEY", null);
+    const { liveEnv, keys, fixtureHome } = setupEnv(fixture, "ONLY_KEY", null);
     const previous = new Map<string, string | undefined>();
     for (const key of keys) previous.set(key, liveEnv[key]);
     const { api, commands } = createPi();
@@ -165,7 +165,7 @@ describe("env-reload extension", () => {
         ui: { notify(message: string, type?: string) { notifications.push({ message, type }); } },
       });
       expect(liveEnv.ONLY_KEY).toBe("old-value");
-      expect(notifications).toEqual([{ message: "Cannot reload ~/.omp/.env: model configuration was not rebuilt", type: "error" }]);
+      expect(notifications).toEqual([{ message: `Cannot reload ${join(fixtureHome, ".omp", ".env")}: model configuration was not rebuilt`, type: "error" }]);
     } finally {
       restoreEnv(liveEnv, keys, previous);
     }
