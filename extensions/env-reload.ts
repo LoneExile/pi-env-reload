@@ -80,7 +80,12 @@ function parseEnvFile(filePath: string): Record<string, string> {
 	return values;
 }
 
+// PI_ENV_RELOAD_CONFIG_DIR overrides the config root that holds the .env
+// file. OMP defaults to ~/.omp, Pi to ~/.pi/agent; set it explicitly when the
+// file lives somewhere else (Pi users: PI_ENV_RELOAD_CONFIG_DIR=$HOME/.pi/agent).
 function getConfigRootDir(): string {
+	const override = process.env.PI_ENV_RELOAD_CONFIG_DIR;
+	if (override && override.length > 0) return override;
 	const home = process.env.HOME ?? homedir();
 	const root = join(home, process.env.PI_CONFIG_DIR || ".omp");
 	const profile = (process.env.OMP_PROFILE ?? process.env.PI_PROFILE)?.trim();

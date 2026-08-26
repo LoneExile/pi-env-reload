@@ -116,6 +116,39 @@ describe("env-reload extension", () => {
     }
   });
 
+  test("honors PI_ENV_RELOAD_CONFIG_DIR override (Pi path)", async () => {
+    const fixtureHome = createEnvFixture("PI_TEST_RELOAD_KEY=new-value\nSECOND_KEY=another-value\n");
+    const liveEnv = process.env as LiveEnv;
+    const previous = new Map<string, string | undefined>();
+    const keys = ["PI_TEST_RELOAD_KEY", "SECOND_KEY", "HOME", "PI_ENV_RELOAD_CONFIG_DIR"];
+    for (const key of keys) previous.set(key, liveEnv[key]);
+    const piAgent = join(fixtureHome, ".pi", "agent");
+    mkdirSync(piAgent, { recursive: true });
+    writeFileSync(join(piAgent, ".env"), "PI_TEST_RELOAD_KEY=new-value\nSECOND_KEY=another-value\n");
+    liveEnv.HOME = fixtureHome;
+    liveEnv.PI_ENV_RELOAD_CONFIG_DIR = piAgent;
+    liveEnv.PI_TEST_RELOAD_KEY = "old-value";
+    delete liveEnv.SECOND_KEY;
+    const { api, commands } = createPi();
+    const module = await import(extensionPath);
+    module.default(api);
+    const notifications: Array<{ message: string; type?: string }> = [];
+    try {
+      await commands.get("env-reload")?.handler("", {
+        waitForIdle: async () => {},
+        modelRegistry: {
+          refresh: async () => {},
+        },
+        ui: { notify(message: string, type?: string) { notifications.push({ message, type }); } },
+      });
+      expect(liveEnv.PI_TEST_RELOAD_KEY).toBe("new-value");
+      expect(liveEnv.SECOND_KEY).toBe("another-value");
+      expect(notifications).toEqual([{ message: "Reloaded ~/.omp/.env", type: "info" }]);
+    } finally {
+      restoreEnv(liveEnv, keys, previous);
+    }
+  });
+
   test("fails without mutating env when no model-rebuild API exists", async () => {
     const fixture = "ONLY_KEY=new-value\n";
     const { liveEnv, keys } = setupEnv(fixture, "ONLY_KEY", null);

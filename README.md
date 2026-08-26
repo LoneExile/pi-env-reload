@@ -38,6 +38,10 @@ The command reports only a generic success or error message. It never prints cre
 ## Scope and limitations
 
 - The extension reloads only `~/.omp/.env` or the active profile's `.env` file.
+- On Pi, set `PI_ENV_RELOAD_CONFIG_DIR` to the Pi config directory holding the
+  `.env` file (default: `~/.pi/agent`) so the reload targets the right file:
+  `PI_ENV_RELOAD_CONFIG_DIR=$HOME/.pi/agent`. Without it, Pi falls back to the
+  `~/.omp` default.
 - It updates the current process only. Child shells and future OMP processes use their own environment.
 - Values supplied by a `!command` entry in `models.yml` remain subject to OMP's command-result cache.
 - The reload is explicit. The package does not watch the file or reload credentials during an active request.
