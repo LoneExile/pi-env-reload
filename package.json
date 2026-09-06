@@ -1,6 +1,6 @@
 {
   "name": "pi-env-reload",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Reload .env credentials in a running Oh My Pi or Pi session",
   "keywords": [
     "pi-package",
@@ -30,7 +30,7 @@
   },
   "omp": {
     "name": "pi-env-reload",
-    "description": "Reload ~/.omp/.env credentials in a running session with /env-reload.",
+    "description": "Reload ~/.omp/.env credentials in a running session with /env-reload, or opt into periodic auto reload via PI_ENV_RELOAD_AUTO.",
     "extensions": [
       "./extensions"
     ]

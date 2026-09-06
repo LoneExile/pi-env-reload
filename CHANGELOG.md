@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-06
+
+### Added
+
+- Opt-in auto reload: set `PI_ENV_RELOAD_AUTO` (e.g. `5m`, `30s`, or a bare
+  number of seconds; `off` to disable) in the dotenv file and changed
+  credentials are picked up on a timer without running `/env-reload`. Unset
+  keeps the previous explicit-only behavior.
+- Ticks check the file's mtime and size, so an unchanged file costs one stat;
+  ticks during an active request are skipped and picked up later.
+- OMP sessions use the harness-managed interval (cleared on session shutdown);
+  Pi falls back to a raw unref'd interval cleared on `session_shutdown`.
+  `PI_ENV_RELOAD_AUTO` values below a 30-second floor are clamped.
+
 ## [0.1.1] - 2026-08-26
 
 ### Added
