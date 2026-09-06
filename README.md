@@ -48,6 +48,22 @@ The command reports only a generic success or error message. It never prints cre
   Without the override the extension reads the `~/.omp` default, so Pi users
   must set it once (export it in your shell profile).
 
+### Auto reload
+
+The reload stays explicit by default. To pick up rotated credentials without
+running `/env-reload`, opt in with `PI_ENV_RELOAD_AUTO` in the dotenv file:
+
+```bash
+PI_ENV_RELOAD_AUTO=5m
+```
+
+Every tick compares the dotenv file's mtime and size against the last applied
+reload, so an unchanged file costs nothing. On a change the extension applies
+the values while the agent is idle, rebuilds the model registry, and shows one
+`(auto)` notification. Accepted formats: `5m`, `30s`, `1h`, or a bare number of
+seconds (`300`). `off` (or unsetting the variable) disables it, and values
+below a 30-second floor are clamped.
+
 ## Scope and limitations
 
 - The extension reloads the dotenv file at the configured config root:
@@ -55,9 +71,13 @@ The command reports only a generic success or error message. It never prints cre
   `PI_ENV_RELOAD_CONFIG_DIR` path on Pi.
 - Pi support requires `PI_ENV_RELOAD_CONFIG_DIR`; without it Pi reads the
   `~/.omp` default, which does not match Pi's `~/.pi/agent` layout.
-- It updates the current process only. Child shells and future OMP processes use their own environment.
-- Values supplied by a `!command` entry in `models.yml` remain subject to OMP's command-result cache.
-- The reload is explicit. The package does not watch the file or reload credentials during an active request.
+- It updates the current process only. Child shells and future OMP processes
+  use their own environment.
+- Values supplied by a `!command` entry in `models.yml` remain subject to
+  OMP's command-result cache.
+- Auto reload never mutates the environment or rebuilds the registry during an
+  active request; the change is picked up on a later tick once the agent is
+  idle. A manual `/env-reload` still waits for the active request to finish.
 
 ## Develop
 
